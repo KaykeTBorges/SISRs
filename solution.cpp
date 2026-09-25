@@ -4,6 +4,9 @@ Solution buildTrivial(){
     CVRPInstance & instance = CVRPInstance::getInstance();
 
     Solution s;
+    s.localizacao.resize(instance.dimension);
+    s.ausentes.reserve(instance.dimension);
+
     for (int c = 1; c < instance.dimension; c++) {
         Veiculo v;
         v.route = {0, c, 0};
@@ -30,12 +33,25 @@ double recalculateTourCost(std::vector<int> & route){
 void recalculateLocalizacao(Solution &s){
     CVRPInstance & instance = CVRPInstance::getInstance();
     
-    s.localizacao.resize(instance.dimension+1);
     for(int t = 0; t < s.Tours.size(); t++){
         for(int idx = 1; idx < s.Tours[t].route.size() - 1; idx++){
             int clienteId = s.Tours[t].route[idx];
-            s.localizacao[clienteId] = {t, idx};
+            s.localizacao[clienteId] = {t, idx, true};
         }
+    }
+}
+
+void recalculateLocalizacaoTour(Solution &s, int tour, int idx_new = 1){
+    for(int idx = idx_new; idx < s.Tours[tour].route.size() - 1; idx++){
+        int clienteId = s.Tours[tour].route[idx];
+        s.localizacao[clienteId] = {tour, idx};
+    }
+}
+
+void recalculateLocalizacaoAusente(Solution &s){
+    for(int idx = 0; idx < s.ausentes.size(); idx++){
+        int clienteAusente = s.ausentes[idx];
+        s.localizacao[clienteAusente] = {-1, idx, false};
     }
 }
 
@@ -48,3 +64,34 @@ void recalculateTotalCost(Solution &s){
     }
 }
 
+void removerClenteTour(Solution &s, int tour, int idx){
+    CVRPInstance& instance = CVRPInstance::getInstance();
+    int clienteRemovido = s.Tours[tour].route[idx];
+
+    s.Tours[tour].usedCapacity -= instance.nodes[clienteRemovido].demand;
+
+    s.localizacao[clienteRemovido] = {-1, s.ausentes.size(), false};
+
+    s.ausentes.push_back(clienteRemovido);
+
+    s.Tours[tour].route.erase(s.Tours[tour].route.begin() + idx);
+
+    recalculateLocalizacaoTour(s, tour, idx);
+    s.Tours[tour].cost = recalculateTourCost(s.Tours[tour].route);  
+
+}
+
+void inseriClienteTour(Solution &s, int tour, int idx, int clienteId){
+    CVRPInstance& instance = CVRPInstance::getInstance();
+
+    s.Tours[tour].route.insert(s.Tours[tour].route.begin() + idx, clienteId);
+
+    s.ausentes.erase(s.ausentes.begin() + s.localizacao[clienteId].idx);
+
+    s.localizacao[clienteId] = {tour, idx, true};
+
+    s.Tours[tour].usedCapacity += instance.nodes[clienteId].demand;
+
+    recalculateLocalizacaoTour(s, tour, idx);
+    s.Tours[tour].cost = recalculateTourCost(s.Tours[tour].route);
+}
