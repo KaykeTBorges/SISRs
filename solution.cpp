@@ -41,7 +41,7 @@ void recalculateLocalizacao(Solution &s){
     }
 }
 
-void recalculateLocalizacaoTour(Solution &s, int tour, int idx_new = 1){
+void recalculateLocalizacaoTour(Solution &s, int tour, int idx_new){
     for(int idx = idx_new; idx < s.Tours[tour].route.size() - 1; idx++){
         int clienteId = s.Tours[tour].route[idx];
         s.localizacao[clienteId] = {tour, idx};
@@ -64,7 +64,7 @@ void recalculateTotalCost(Solution &s){
     }
 }
 
-void removerClenteTour(Solution &s, int tour, int idx){
+void removerClienteTour(Solution &s, int tour, int idx){
     CVRPInstance& instance = CVRPInstance::getInstance();
     int clienteRemovido = s.Tours[tour].route[idx];
 
@@ -76,16 +76,22 @@ void removerClenteTour(Solution &s, int tour, int idx){
 
     s.Tours[tour].route.erase(s.Tours[tour].route.begin() + idx);
 
-    recalculateLocalizacaoTour(s, tour, idx);
-    s.Tours[tour].cost = recalculateTourCost(s.Tours[tour].route);  
+    // isso aqui vai dar merda porque quando retirar o cliente da rota e atualizar a localização
+    // a retirada em cadeia da ruin vai dar errado, logo talvez seja melhor eu só tirar 
+    // e chamar essas funções depois
+    
+    // recalculateLocalizacaoTour(s, tour, idx);
+    // s.Tours[tour].cost = recalculateTourCost(s.Tours[tour].route);  
 
 }
 
-void inseriClienteTour(Solution &s, int tour, int idx, int clienteId){
+void inserirClienteTour(Solution &s, int tour, int idx, int clienteId){
     CVRPInstance& instance = CVRPInstance::getInstance();
 
     s.Tours[tour].route.insert(s.Tours[tour].route.begin() + idx, clienteId);
 
+    // isso aqui provavelmente que não precise, porque vou precisar reinserir todos os clientes
+    // e dai vou usar um clear nesse vetor, evitando o erase O(n)
     s.ausentes.erase(s.ausentes.begin() + s.localizacao[clienteId].idx);
 
     s.localizacao[clienteId] = {tour, idx, true};

@@ -1,9 +1,12 @@
 #include "data.h"
 #include "solution.h"
+#include "random.h"
 #include <iostream>
 
 int main(int argc, char** argv)
 {
+    Random::randomize();
+    
     if (argc < 2) {
         std::cout << "Uso: " << argv[0] << " <arquivo.vrp>" << std::endl;
         return 1;

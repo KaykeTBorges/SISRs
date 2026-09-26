@@ -2,7 +2,7 @@ CXX = g++
 CXXFLAGS = -std=c++20 -Wall -Wextra -g
 
 TARGET = leitor
-SOURCES = main.cpp data.cpp solution.cpp
+SOURCES = main.cpp data.cpp solution.cpp ruin.cpp
 
 $(TARGET): $(SOURCES)
 	$(CXX) $(CXXFLAGS) -o $(TARGET) $(SOURCES)

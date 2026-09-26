@@ -28,9 +28,15 @@ struct Solution {
 };
 
 Solution buildTrivial();
-double recalculateTourCost(std::vector<int> & route);
 void recalculateLocalizacao(Solution &s);
+void recalculateLocalizacaoTour(Solution &s, int tour, int idx_new = 1);
+void recalculateLocalizacaoAusente(Solution &s);
+
+double recalculateTourCost(std::vector<int> & route);
 void recalculateTotalCost(Solution &s);
+
+void removerClienteTour(Solution &s, int tour, int idx);
+void inserirClienteTour(Solution &s, int tour, int idx, int clienteId);
 
 
 
