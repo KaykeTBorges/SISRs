@@ -36,7 +36,7 @@ void recalculateLocalizacao(Solution &s){
     for(int t = 0; t < s.Tours.size(); t++){
         for(int idx = 1; idx < s.Tours[t].route.size() - 1; idx++){
             int clienteId = s.Tours[t].route[idx];
-            s.localizacao[clienteId] = {t, idx, true};
+            s.localizacao[clienteId] = {t, idx};
         }
     }
 }
@@ -51,7 +51,7 @@ void recalculateLocalizacaoTour(Solution &s, int tour, int idx_new){
 void recalculateLocalizacaoAusente(Solution &s){
     for(int idx = 0; idx < s.ausentes.size(); idx++){
         int clienteAusente = s.ausentes[idx];
-        s.localizacao[clienteAusente] = {-1, idx, false};
+        s.localizacao[clienteAusente] = {-1, idx};
     }
 }
 
@@ -70,7 +70,7 @@ void removerClienteTour(Solution &s, int tour, int idx){
 
     s.Tours[tour].usedCapacity -= instance.nodes[clienteRemovido].demand;
 
-    s.localizacao[clienteRemovido] = {-1, s.ausentes.size(), false};
+    s.localizacao[clienteRemovido] = {-1, -1};
 
     s.ausentes.push_back(clienteRemovido);
 
@@ -94,7 +94,7 @@ void inserirClienteTour(Solution &s, int tour, int idx, int clienteId){
     // e dai vou usar um clear nesse vetor, evitando o erase O(n)
     s.ausentes.erase(s.ausentes.begin() + s.localizacao[clienteId].idx);
 
-    s.localizacao[clienteId] = {tour, idx, true};
+    s.localizacao[clienteId] = {tour, idx};
 
     s.Tours[tour].usedCapacity += instance.nodes[clienteId].demand;
 

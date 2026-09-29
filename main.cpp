@@ -1,6 +1,8 @@
 #include "data.h"
 #include "solution.h"
 #include "random.h"
+#include "ruin.h"
+#include "recreate.h"
 #include <iostream>
 
 int main(int argc, char** argv)
@@ -15,30 +17,30 @@ int main(int argc, char** argv)
     try {
         loadInstance(argv[1]);
 
-        std::cout << "\n=== Solucao Inicial ===" << std::endl;
+        std::cout << "\n=== Teste do Evaluate Position ===" << std::endl;
         Solution s = buildTrivial();
+        ruin(s);
 
-        std::cout << "Numero de veiculos: " << s.Tours.size() << std::endl;
-
-        // pega o primeiro veiculo como amostra
-        std::cout << "Rota do veiculo 0: ";
-        for (int c : s.Tours[0].route) std::cout << c << " ";
+        std::cout << "Clientes ausentes apos ruin: ";
+        for (int c : s.ausentes) std::cout << c << " ";
         std::cout << std::endl;
 
-        std::cout << "UsedCapacity veiculo 0: " << s.Tours[0].usedCapacity << std::endl;
-        std::cout << "Cost veiculo 0: " << s.Tours[0].cost << std::endl;
+        if (!s.ausentes.empty()) {
+            int clienteTeste = s.ausentes[0];
+            MelhorPosicao best;
+            evaluatePosition(s, clienteTeste, best);
 
-        std::cout << "Custo total da solucao: " << s.totalCost << std::endl;
+            std::cout << "Melhor posicao para cliente " << clienteTeste << ":" << std::endl;
+            std::cout << "  tourId: " << best.tourId << std::endl;
+            std::cout << "  idx: " << best.idx << std::endl;
+            std::cout << "  custo: " << best.custo << std::endl;
 
-        // checagem cruzada: pega um cliente, confirma que localizacao bate com route
-        int clienteTeste = 5;
-        int tourId = s.localizacao[clienteTeste].tourId;
-        int pos = s.localizacao[clienteTeste].idx;
-        std::cout << "Cliente " << clienteTeste << " deveria estar no tour " << tourId
-                << ", posicao " << pos << std::endl;
-        std::cout << "route[" << tourId << "][" << pos << "] = "
-                << s.Tours[tourId].route[pos] << " (deveria ser " << clienteTeste << ")" << std::endl;
-
+            if (best.tourId != -1) {
+                std::cout << "  Rota do tour escolhido: ";
+                for (int c : s.Tours[best.tourId].route) std::cout << c << " ";
+                std::cout << std::endl;
+            }
+        }
     } catch (const std::runtime_error& e) {
         std::cerr << "Erro ao carregar instancia: " << e.what() << std::endl;
         return 1;

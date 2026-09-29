@@ -15,7 +15,6 @@ struct Veiculo {
 struct ClienteLocalizacao {
     int tourId = -1; // quando ele não está dentro vai estar -1
     int idx = -1; // nos dois daqui (-1)
-    bool naRota = true;
 };
 
 struct Solution {
