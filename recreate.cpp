@@ -66,10 +66,11 @@ void recreate(Solution &s){
     s.ausentes.clear();
 }
 
-void recreateFleet(Solution &s, int clienteId){
+void recreateFleet(Solution &s){
+    // if (s.ausentes.empty()) return;
     decidirSort(s.ausentes);
 
-    for(int i = s.ausentes.size() - 1; i >= 0; i++){
+    for(int i = s.ausentes.size() - 1; i >= 0; i--){
         MelhorPosicao mp;
 
         evaluatePosition(s, s.ausentes[i], mp);

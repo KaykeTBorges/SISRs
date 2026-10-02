@@ -21,6 +21,7 @@ void evaluatePosition(const Solution &s, int clienteId, MelhorPosicao &best);
 bool pulaBlinkRate();
 
 void recreate(Solution &s);
+void recreateFleet(Solution &s);
 
 void adcionarNovoTour(Solution &s, int clienteId);
 

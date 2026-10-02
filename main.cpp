@@ -2,9 +2,11 @@
 #include "solution.h"
 #include "ruin.h"
 #include "recreate.h"
+
 #include <iostream>
 
 int main(int argc, char** argv){
+
     Random::randomize();
 
     if (argc < 2) {
@@ -21,26 +23,32 @@ int main(int argc, char** argv){
         // 2. Cria solução trivial
         Solution s = buildTrivial();
 
-        std::cout << "=== Local Search SISRs ===" << std::endl;
+        std::cout << "=== LOCAL SEARCH SISRs ===" << std::endl;
 
-        std::cout << "Custo inicial: "
+        std::cout << "\n--- Solucao inicial ---" << std::endl;
+        std::cout << "Custo: "
                   << s.totalCost << std::endl;
 
-        std::cout << "Numero de veiculos inicial: "
+        std::cout << "Numero de veiculos: "
                   << s.Tours.size() << std::endl;
 
         // 3. Executa o Local Search
         localSearch(s);
 
         // 4. Mostra resultado
-        std::cout << "\nCusto final: "
+        std::cout << "\n--- Solucao final ---" << std::endl;
+
+        std::cout << "Custo: "
                   << s.totalCost << std::endl;
 
-        std::cout << "Numero de veiculos final: "
+        std::cout << "Numero de veiculos: "
                   << s.Tours.size() << std::endl;
 
+        std::cout << "Clientes ausentes: "
+                  << s.ausentes.size() << std::endl;
+
         // 5. Mostra as rotas finais
-        std::cout << "\nRotas finais:" << std::endl;
+        std::cout << "\n--- Rotas finais ---" << std::endl;
 
         for (int t = 0; t < s.Tours.size(); t++) {
 
@@ -51,7 +59,18 @@ int main(int argc, char** argv){
             }
 
             std::cout << "| custo = "
-                      << s.Tours[t].cost;
+                      << s.Tours[t].cost
+                      << std::endl;
+        }
+
+        // 6. Mostra clientes ausentes, caso existam
+        if (!s.ausentes.empty()) {
+
+            std::cout << "\nClientes ausentes: ";
+
+            for (int cliente : s.ausentes) {
+                std::cout << cliente << " ";
+            }
 
             std::cout << std::endl;
         }

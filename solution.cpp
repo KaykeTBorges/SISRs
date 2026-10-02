@@ -58,9 +58,7 @@ void recalculateLocalizacaoClientesNoTour(Solution &s, int tour, int idx_new){
 
 void recalculateTour(Solution &s, int tourInicial){
     for(int t = tourInicial; t < s.Tours.size(); t++){
-        for(int clId = 0; clId < s.Tours[t].route.size(); clId++){
-            s.localizacao[clId].tourId = t;
-        }
+        recalculateLocalizacaoClientesNoTour(s, t);
     }
 }
 
@@ -110,13 +108,55 @@ void inserirClienteTour(Solution &s, int tour, int idx, int clienteId){
 }
 
 void localSearch(Solution &s){
+    CVRPInstance& instance = CVRPInstance::getInstance();
+
     Solution sBest = s;
-    Solution sEstrela = s;
+    Solution sEstrela;
 
     double temp = TEMP_INICIAL;
     double c = calcularC(ITERATIONS);
+    int i;
 
-    for(int i = 0; i < ITERATIONS; i++){
+    std::vector<int> absenceCounter;
+    absenceCounter.resize(instance.dimension + 1, 0);
+
+    for(i = 0; i < ITERATIONS_FLEET; i++){
+        int cardinalidadeA = 0;
+        int cardinalidadeAEstrela = 0;
+
+        sEstrela = s;
+
+        ruin(sEstrela);
+        recreateFleet(sEstrela);
+        
+        cardinalidadeA = s.ausentes.size();
+        cardinalidadeAEstrela = sEstrela.ausentes.size();
+
+        if(cardinalidadeAEstrela < cardinalidadeA){
+            s = sEstrela;
+        }else{
+            int somaA = sumAbs(s, absenceCounter);
+            int somaAEstrela = sumAbs(sEstrela, absenceCounter);
+            if(somaAEstrela < somaA){
+                s = sEstrela;
+            }
+        }
+
+        if (cardinalidadeAEstrela == 0){
+            sBest = sEstrela;
+
+            removerTour(s, encontrarTourMenorSumAbs(s, absenceCounter));
+        }
+        
+
+        if(!sEstrela.ausentes.empty()){
+            for(int idx = 0; idx < sEstrela.ausentes.size(); idx++){
+                absenceCounter[sEstrela.ausentes[idx]]++;
+            }
+        }
+    }
+
+    for(i; i < ITERATIONS; i++){
         sEstrela = s;
 
         ruin(sEstrela);
@@ -142,4 +182,57 @@ double calcularC(int f){
         double t = TEMP_FINAL / TEMP_INICIAL;
 
         return std::pow(t, elevado);
+}
+
+int sumAbs(const Solution& s, const std::vector<int>& absenceCounter) {
+    int sum = 0;
+
+    for (int cliente : s.ausentes) {
+        sum += absenceCounter[cliente];
+    }
+
+    return sum;
+}
+
+int encontrarTourMenorSumAbs(const Solution& s, const std::vector<int>& absenceCounter){
+    int menorSumAbs = std::numeric_limits<int>::max();
+    int tourRemover = -1;
+
+    for(int t = 0; t < s.Tours.size(); t++){
+        int soma = 0;
+        for(int idx = 1; idx < s.Tours[t].route.size() - 1; idx++){
+            soma += absenceCounter[s.Tours[t].route[idx]];
+        }
+        if(soma < menorSumAbs){
+            menorSumAbs = soma;
+            tourRemover = t;
+        }
+    }
+    return tourRemover;
+}
+
+void removerTour(Solution &s, int tour){
+    if(tour == -1) return;
+
+    // Coloca todos os clientes do tour em ausentes
+    for (int idx = 1; idx < s.Tours[tour].route.size() - 1; idx++){
+
+        int clienteId = s.Tours[tour].route[idx];
+
+        s.ausentes.push_back(clienteId);
+        s.localizacao[clienteId] = {-1, -1};
+    }
+
+    // Se não for o último, move o último para a posição removida
+    if (tour != s.Tours.size() - 1){
+
+        s.Tours[tour] = std::move(s.Tours.back());
+        // Remove o último elemento
+        s.Tours.pop_back();
+
+        recalculateTour(s, tour);
+    }else{
+        s.Tours.pop_back();
+    }
+    recalculateTotalCost(s);
 }
