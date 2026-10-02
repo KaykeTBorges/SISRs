@@ -4,6 +4,10 @@
 #include <string>
 #include <vector>
 
+constexpr int ITERATIONS = 30000;
+constexpr double TEMP_INICIAL = 100.0;
+constexpr double TEMP_FINAL = 1.0;
+
 struct Node {
     int id;
     double x, y;
@@ -17,6 +21,7 @@ public:
     std::string name;
     int dimension = -1;
     int capacity = -1;
+    int depotId = 1;
     std::string type;
         
     std::vector<Node> nodes;

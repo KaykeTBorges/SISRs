@@ -9,8 +9,7 @@ void removerString(Solution &s, int tour, int idxInicial, int cardinalidade){
     for (int i = 0; i < cardinalidade; i++){
         removerClienteTour(s, tour, idxInicial);
     }
-
-    recalculateLocalizacaoTour(s, tour, idxInicial);
+    // recalculateLocalizacaoClienteNoTour(s, tour, idxInicial);
     s.Tours[tour].cost = recalculateTourCost(s.Tours[tour].route);
     s.totalCost += s.Tours[tour].cost - custoAntigo;
 }
@@ -35,9 +34,11 @@ int decidirIdxInicial(const Solution &s, int cliente, int lt){
 
     // aqui defini o escopo do começo do random, se der 0 
     // quer dizer que meu espaço da direita é maior que a cardinalidade
+    // ou voce não precisa retirar nada para caber, ou precisa retirar com base no espaço da direita, para caber
     int clienteAntesMin = std::max(0, lt - 1 - espacoDireita);
     // aqui defini o escopo do fim do random, o espaco a esquerda é o limitante
     // ele que define se pode ou não voltar mais atras na posição atual do cliente
+    // não pode extrapolar o espaço da esquerda, se não vai acessar coisa errada
     int clienteAntesMax = std::min(lt - 1, espacoEsquerda);
 
     // porque no fim o que queremos com isso é subtrair a posição atual do cliente
@@ -87,7 +88,7 @@ void ruin(Solution &s){
     // intervalo fechado dos dois lados (inclusos)
     // retirando o 0 que é o deposito e -1 porque o dimension é conseguido como o size
     // ai ele é uma contagem, logo não uma indexação
-    int cSeed = Random::getInt(1, instance.dimension - 1);
+    int cSeed = Random::getInt(2, instance.dimension);
     
     // R 
     std::unordered_set<int> R;
@@ -112,6 +113,8 @@ void ruin(Solution &s){
         }
         i++;
     }
+    
+    recalculateLocalizacao(s);
 }
 
 

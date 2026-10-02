@@ -28,14 +28,18 @@ struct Solution {
 
 Solution buildTrivial();
 void recalculateLocalizacao(Solution &s);
-void recalculateLocalizacaoTour(Solution &s, int tour, int idx_new = 1);
-void recalculateLocalizacaoAusente(Solution &s);
+void recalculateLocalizacaoClienteNoTour(Solution &s, int tour, int idx_new = 1);
+void recalculateLocalizacaoTour(Solution &s);
 
 double recalculateTourCost(std::vector<int> & route);
 void recalculateTotalCost(Solution &s);
 
 void removerClienteTour(Solution &s, int tour, int idx);
 void inserirClienteTour(Solution &s, int tour, int idx, int clienteId);
+
+void localSearch(Solution &s);
+double funcaoLog(double &temp);
+double calcularC(int f);
 
 
 

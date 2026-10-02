@@ -37,6 +37,7 @@ CVRPInstance& readInstance(const std::string& filepath){
     CVRPInstance& instance = CVRPInstance::getInstance();
     instance.dimension = -1;
     instance.capacity = -1;
+    instance.depotId = -1;
 
     Section currentSection = Section::NONE;
     std::string line;
@@ -74,7 +75,7 @@ CVRPInstance& readInstance(const std::string& filepath){
             double x, y;
             iss >> id >> x >> y;
 
-            instance.nodes[id - 1] = {id, x, y, 0};
+            instance.nodes[id] = {id, x, y, 0};
 
             continue;
         }
@@ -85,7 +86,15 @@ CVRPInstance& readInstance(const std::string& filepath){
             double demand;
             iss >> id >> demand;
 
-            instance.nodes[id - 1].demand = demand;
+            instance.nodes[id].demand = demand;
+            continue;
+        }
+
+        if (currentSection == Section::DEPOT) {
+            std::istringstream iss(trimmed);
+            int id;
+            iss >> id;
+            if (id != -1) instance.depotId = id;
             continue;
         }
 
@@ -103,7 +112,7 @@ CVRPInstance& readInstance(const std::string& filepath){
         if(key == "NAME") instance.name = value;
         else if(key == "DIMENSION") {
             instance.dimension = std::stoi(value);
-            instance.nodes.resize(instance.dimension);
+            instance.nodes.resize(instance.dimension + 1);
         }
         else if(key == "CAPACITY") instance.capacity = std::stoi(value);
         else if(key == "EDGE_WEIGHT_TYPE") instance.type = value;
@@ -116,8 +125,11 @@ CVRPInstance& readInstance(const std::string& filepath){
     if(instance.capacity < 0){
         throw std::runtime_error("Capacity menor que zero " + filepath);
     }
-    if(instance.nodes.size() != static_cast<size_t>(instance.dimension)){
+    if(instance.nodes.size() != static_cast<size_t>(instance.dimension + 1)){
         throw std::runtime_error("Nodes tamanho errado " + filepath);
+    }
+    if(instance.depotId < 1 || instance.depotId > instance.dimension){
+        throw std::runtime_error("ID do deposito invalido " + filepath);
     }
 
     return instance;
@@ -139,10 +151,10 @@ double distance(const Node& a, const Node& b, const std::string& edgeWeightType)
 std::vector<std::vector<double>> buildDistanceMatrix(const CVRPInstance& instance){
     size_t n = instance.dimension;
 
-    std::vector<std::vector<double>> matrix(n, std::vector<double>(n, 0.0));
+    std::vector<std::vector<double>> matrix(n + 1, std::vector<double>(n + 1, 0.0));
 
-    for(size_t i = 0; i < n; i++){
-        for(size_t j = i + 1; j < n; j++){
+    for(size_t i = 1; i <= n; i++){
+        for(size_t j = i + 1; j <= n; j++){
             matrix[i][j] = distance(instance.nodes[i], instance.nodes[j], instance.type);
             matrix[j][i] = matrix[i][j];
         }
@@ -161,14 +173,15 @@ CVRPInstance& loadInstance(const std::string& filepath){
 }
 
 std::vector<std::vector<int>> buildAdjacencyLists(const CVRPInstance& instance){
-    size_t n = instance.dimension;
+    std::vector<std::vector<int>> adjacencyList(instance.dimension + 1, std::vector<int>(instance.dimension - 1));
 
-    std::vector<std::vector<int>> adjacencyList(n, std::vector<int>(n-1));
-
-    // deposito não entra, logo começa no 1
-    for(size_t i = 1; i < n; i++){
-        for(size_t j = 1; j < n; j++){
-            adjacencyList[i][j - 1] = j;
+    for(int i = 1; i <= instance.dimension; i++){
+        if (i == instance.depotId) continue;
+        int pos = 1;
+        for(int j = 1; j <= instance.dimension; j++){
+            if (j == instance.depotId || j == i) continue;
+            adjacencyList[i][pos] = j;
+            pos++;
         }
         std::sort(adjacencyList[i].begin(), adjacencyList[i].end(),[&](int a, int b) {
             return instance.distanceMatrix[i][a] < instance.distanceMatrix[i][b];

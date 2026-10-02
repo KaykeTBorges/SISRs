@@ -1,15 +1,18 @@
 #include "solution.h"
+#include "ruin.h"
+#include "recreate.h"
 
 Solution buildTrivial(){
     CVRPInstance & instance = CVRPInstance::getInstance();
 
     Solution s;
-    s.localizacao.resize(instance.dimension);
+    s.localizacao.resize(instance.dimension + 1);
     s.ausentes.reserve(instance.dimension);
 
-    for (int c = 1; c < instance.dimension; c++) {
+    for (int c = 1; c <= instance.dimension; c++) {
+        if (c == instance.depotId) continue;
         Veiculo v;
-        v.route = {0, c, 0};
+        v.route = {instance.depotId, c, instance.depotId};
         v.usedCapacity = instance.nodes[c].demand;
         s.Tours.push_back(v);
     }
@@ -30,10 +33,15 @@ double recalculateTourCost(std::vector<int> & route){
     return value;
 }
 
+// usado tbm para tirar veiculos sem clientes
 void recalculateLocalizacao(Solution &s){
-    CVRPInstance & instance = CVRPInstance::getInstance();
-    
     for(int t = 0; t < s.Tours.size(); t++){
+        if(s.Tours[t].route.size() <= 2){
+            s.Tours[t] = std::move(s.Tours.back());
+            s.Tours.pop_back();
+            t--;
+            continue;
+        }
         for(int idx = 1; idx < s.Tours[t].route.size() - 1; idx++){
             int clienteId = s.Tours[t].route[idx];
             s.localizacao[clienteId] = {t, idx};
@@ -41,17 +49,18 @@ void recalculateLocalizacao(Solution &s){
     }
 }
 
-void recalculateLocalizacaoTour(Solution &s, int tour, int idx_new){
+void recalculateLocalizacaoClientesNoTour(Solution &s, int tour, int idx_new){
     for(int idx = idx_new; idx < s.Tours[tour].route.size() - 1; idx++){
         int clienteId = s.Tours[tour].route[idx];
         s.localizacao[clienteId] = {tour, idx};
     }
 }
 
-void recalculateLocalizacaoAusente(Solution &s){
-    for(int idx = 0; idx < s.ausentes.size(); idx++){
-        int clienteAusente = s.ausentes[idx];
-        s.localizacao[clienteAusente] = {-1, idx};
+void recalculateTour(Solution &s, int tourInicial){
+    for(int t = tourInicial; t < s.Tours.size(); t++){
+        for(int clId = 0; clId < s.Tours[t].route.size(); clId++){
+            s.localizacao[clId].tourId = t;
+        }
     }
 }
 
@@ -87,17 +96,50 @@ void removerClienteTour(Solution &s, int tour, int idx){
 
 void inserirClienteTour(Solution &s, int tour, int idx, int clienteId){
     CVRPInstance& instance = CVRPInstance::getInstance();
+    double custoAntigo = s.Tours[tour].cost;
 
     s.Tours[tour].route.insert(s.Tours[tour].route.begin() + idx, clienteId);
-
-    // isso aqui provavelmente que não precise, porque vou precisar reinserir todos os clientes
-    // e dai vou usar um clear nesse vetor, evitando o erase O(n)
-    s.ausentes.erase(s.ausentes.begin() + s.localizacao[clienteId].idx);
 
     s.localizacao[clienteId] = {tour, idx};
 
     s.Tours[tour].usedCapacity += instance.nodes[clienteId].demand;
 
-    recalculateLocalizacaoTour(s, tour, idx);
+    recalculateLocalizacaoClientesNoTour(s, tour, idx);
     s.Tours[tour].cost = recalculateTourCost(s.Tours[tour].route);
+    s.totalCost += s.Tours[tour].cost - custoAntigo;
+}
+
+void localSearch(Solution &s){
+    Solution sBest = s;
+    Solution sEstrela = s;
+
+    double temp = TEMP_INICIAL;
+    double c = calcularC(ITERATIONS);
+
+    for(int i = 0; i < ITERATIONS; i++){
+        sEstrela = s;
+
+        ruin(sEstrela);
+        recreate(sEstrela);
+
+        if(sEstrela.totalCost < s.totalCost - funcaoLog(temp)){
+            s = sEstrela;
+        }
+        if(sEstrela.totalCost < sBest.totalCost){
+            sBest = sEstrela;
+        }
+        temp = temp * c;
+    }
+}
+
+double funcaoLog(double &temp){
+    double uni = Random::getReal(0, 1);
+    return temp * std::log(uni);
+}
+
+double calcularC(int f){
+        double elevado = 1.0 / f;
+        double t = TEMP_FINAL / TEMP_INICIAL;
+
+        return std::pow(t, elevado);
 }

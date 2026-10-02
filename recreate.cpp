@@ -40,7 +40,7 @@ void adcionarNovoTour(Solution &s, int clienteId){
     CVRPInstance& instance = CVRPInstance::getInstance();
 
     Veiculo t;
-    t.route = {0, clienteId, 0};
+    t.route = {instance.depotId, clienteId, instance.depotId};
     t.cost = recalculateTourCost(t.route);
     t.usedCapacity = instance.nodes[clienteId].demand;
     s.Tours.push_back(t);
@@ -61,6 +61,22 @@ void recreate(Solution &s){
             inserirClienteTour(s, mp.tourId, mp.idx, s.ausentes[i]);
         }else{
             adcionarNovoTour(s, s.ausentes[i]);
+        }
+    }
+    s.ausentes.clear();
+}
+
+void recreateFleet(Solution &s, int clienteId){
+    decidirSort(s.ausentes);
+
+    for(int i = s.ausentes.size() - 1; i >= 0; i++){
+        MelhorPosicao mp;
+
+        evaluatePosition(s, s.ausentes[i], mp);
+        if(mp.idx != -1){
+            inserirClienteTour(s, mp.tourId, mp.idx, s.ausentes[i]);
+            s.ausentes[i] = s.ausentes.back();
+            s.ausentes.pop_back();
         }
     }
 }
@@ -89,10 +105,10 @@ bool sortDemand(int a, int b){
 
 bool sortFar(int a, int b){
     CVRPInstance& instance = CVRPInstance::getInstance();
-    return instance.distanceMatrix[a] > instance.distanceMatrix[b];
+    return instance.distanceMatrix[a][instance.depotId] > instance.distanceMatrix[b][instance.depotId];
 }
 
 bool sortClose(int a, int b){
     CVRPInstance& instance = CVRPInstance::getInstance();
-    return instance.distanceMatrix[a] < instance.distanceMatrix[b];
+    return instance.distanceMatrix[a][instance.depotId] < instance.distanceMatrix[b][instance.depotId];
 }
