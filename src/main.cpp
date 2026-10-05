@@ -3,16 +3,35 @@
 #include "ruin.h"
 #include "recreate.h"
 
+#include <chrono>
+#include <cstdint>
 #include <iostream>
+#include <string>
 
 int main(int argc, char** argv){
 
-    Random::randomize();
-
-    if (argc < 2) {
+    if (argc < 2 || argc > 3) {
         std::cout << "Uso: " << argv[0]
-                  << " <a/A-n32-k5.vrp>" << std::endl;
+                  << " <instancia.vrp> [seed]" << std::endl;
         return 1;
+    }
+
+    if (argc == 3) {
+        try {
+            const std::string seedArgument = argv[2];
+            size_t parsedCharacters = 0;
+            const unsigned long long seed = std::stoull(seedArgument, &parsedCharacters);
+            if (parsedCharacters != seedArgument.size()) {
+                throw std::invalid_argument("seed invalida");
+            }
+            Random::randomize(static_cast<uint64_t>(seed));
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Seed invalida: " << e.what() << std::endl;
+            return 1;
+        }
+    } else {
+        Random::randomize();
     }
 
     try {
@@ -33,7 +52,10 @@ int main(int argc, char** argv){
                   << s.Tours.size() << std::endl;
 
         // 3. Executa o Local Search
+        const auto searchStart = std::chrono::steady_clock::now();
         localSearch(s);
+        const auto searchEnd = std::chrono::steady_clock::now();
+        const std::chrono::duration<double> searchTime = searchEnd - searchStart;
 
         // 4. Mostra resultado
         std::cout << "\n--- Solucao final ---" << std::endl;
@@ -43,6 +65,9 @@ int main(int argc, char** argv){
 
         std::cout << "Numero de veiculos: "
                   << s.Tours.size() << std::endl;
+
+        std::cout << "Tempo (segundos): "
+              << searchTime.count() << std::endl;
 
         std::cout << "Clientes ausentes: "
                   << s.ausentes.size() << std::endl;

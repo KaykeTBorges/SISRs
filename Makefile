@@ -1,11 +1,13 @@
 CXX = g++
 CXXFLAGS = -std=c++20 -Wall -Wextra -g
+CPPFLAGS = -Iinclude
 
 TARGET = leitor
-SOURCES = main.cpp data.cpp solution.cpp ruin.cpp recreate.cpp random.cpp
+SOURCES = $(wildcard src/*.cpp)
+HEADERS = $(wildcard include/*.h)
 
-$(TARGET): $(SOURCES)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(SOURCES)
+$(TARGET): $(SOURCES) $(HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TARGET) $(SOURCES)
 
 clean:
 	rm -f $(TARGET)

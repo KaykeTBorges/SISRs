@@ -18,6 +18,7 @@ Thumbs.db
 
 # Configuração local do editor
 .vscode/
+.venv/
 
 # Documentação local / arquivos Markdown
-*.md
+analise_tecnica_projeto_sisr.md
