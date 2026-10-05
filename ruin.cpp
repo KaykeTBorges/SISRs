@@ -4,14 +4,33 @@
 #include <unordered_set>
 
 void removerString(Solution &s, int tour, int idxInicial, int cardinalidade){
-    double custoAntigo = s.Tours[tour].cost;
+    CVRPInstance& instance = CVRPInstance::getInstance();
 
-    for (int i = 0; i < cardinalidade; i++){
-        removerClienteTour(s, tour, idxInicial);
+    Veiculo& veiculo = s.Tours[tour];
+    double custoAntigo = veiculo.cost;
+    int fim = idxInicial + cardinalidade;
+
+    std::vector<int> novaRoute;
+    novaRoute.reserve(veiculo.route.size());
+
+    for (int idx = 0; idx < veiculo.route.size(); idx++){
+        int cliente = veiculo.route[idx];
+
+        if (idx >= idxInicial && idx < fim) {
+            s.localizacao[cliente] = {-1, -1};
+            s.ausentes.push_back(cliente);
+            veiculo.usedCapacity -= instance.nodes[cliente].demand;
+            continue;
+        }
+
+        novaRoute.push_back(cliente);
     }
-    // recalculateLocalizacaoClienteNoTour(s, tour, idxInicial);
-    s.Tours[tour].cost = recalculateTourCost(s.Tours[tour].route);
-    s.totalCost += s.Tours[tour].cost - custoAntigo;
+
+    veiculo.route = std::move(novaRoute);
+    recalculateLocalizacaoClientesNoTour(s, tour, 1);
+
+    veiculo.cost = recalculateTourCost(veiculo.route);
+    s.totalCost += veiculo.cost - custoAntigo;
 }
 
 int decidirIdxInicial(const Solution &s, int cliente, int lt){

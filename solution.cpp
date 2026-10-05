@@ -94,17 +94,28 @@ void removerClienteTour(Solution &s, int tour, int idx){
 
 void inserirClienteTour(Solution &s, int tour, int idx, int clienteId){
     CVRPInstance& instance = CVRPInstance::getInstance();
-    double custoAntigo = s.Tours[tour].cost;
+    Veiculo& veiculo = s.Tours[tour];
 
-    s.Tours[tour].route.insert(s.Tours[tour].route.begin() + idx, clienteId);
+    int anterior = veiculo.route[idx - 1];
+    int posterior = veiculo.route[idx];
+    double delta = instance.distanceMatrix[anterior][clienteId] + instance.distanceMatrix[clienteId][posterior]
+                 - instance.distanceMatrix[anterior][posterior];
+
+    std::vector<int> novaRoute;
+    novaRoute.reserve(veiculo.route.size() + 1);
+
+    novaRoute.insert(novaRoute.end(), veiculo.route.begin(), veiculo.route.begin() + idx);
+    novaRoute.push_back(clienteId);
+    novaRoute.insert(novaRoute.end(), veiculo.route.begin() + idx, veiculo.route.end());
+
+    veiculo.route = std::move(novaRoute);
 
     s.localizacao[clienteId] = {tour, idx};
-
-    s.Tours[tour].usedCapacity += instance.nodes[clienteId].demand;
+    veiculo.usedCapacity += instance.nodes[clienteId].demand;
 
     recalculateLocalizacaoClientesNoTour(s, tour, idx);
-    s.Tours[tour].cost = recalculateTourCost(s.Tours[tour].route);
-    s.totalCost += s.Tours[tour].cost - custoAntigo;
+    veiculo.cost += delta;
+    s.totalCost += delta;
 }
 
 void localSearch(Solution &s){
@@ -145,7 +156,9 @@ void localSearch(Solution &s){
         if (cardinalidadeAEstrela == 0){
             sBest = sEstrela;
 
-            removerTour(s, encontrarTourMenorSumAbs(s, absenceCounter));
+            removerTour(sEstrela, encontrarTourMenorSumAbs(s, absenceCounter));
+
+            s = sEstrela;
         }
         
 

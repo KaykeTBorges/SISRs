@@ -1,0 +1,23 @@
+# Artefatos de build
+/leitor
+*.o
+*.obj
+*.exe
+*.out
+*.app
+
+# Arquivos temporários e de sistema
+*.tmp
+*.swp
+*.swo
+*~
+core
+core.*
+.DS_Store
+Thumbs.db
+
+# Configuração local do editor
+.vscode/
+
+# Documentação local / arquivos Markdown
+*.md
