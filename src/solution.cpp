@@ -156,9 +156,7 @@ void localSearch(Solution &s){
         if (cardinalidadeAEstrela == 0){
             sBest = sEstrela;
 
-            removerTour(sEstrela, encontrarTourMenorSumAbs(s, absenceCounter));
-
-            s = sEstrela;
+            removerTour(s, encontrarTourMenorSumAbs(s, absenceCounter));
         }
         
 
@@ -183,6 +181,8 @@ void localSearch(Solution &s){
         }
         temp = temp * c;
     }
+
+    s = sBest;
 }
 
 double funcaoLog(double &temp){

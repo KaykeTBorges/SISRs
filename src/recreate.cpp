@@ -18,8 +18,6 @@ bool pulaBlinkRate(){
 }
 
 void evaluatePosition(const Solution &s, int clienteId, MelhorPosicao &best){
-    CVRPInstance& instance = CVRPInstance::getInstance();
-
     for (int tourId = 0; tourId < s.Tours.size(); tourId++) {
         const Veiculo& t = s.Tours[tourId];
         if (!evaluateCapacity(t, clienteId)) continue;
