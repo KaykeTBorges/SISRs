@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++20 -Wall -Wextra -g
+CXXFLAGS = -std=c++20 -Wall -Wextra -O3
 CPPFLAGS = -Iinclude
 
 TARGET = leitor

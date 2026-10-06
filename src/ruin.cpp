@@ -3,34 +3,60 @@
 #include <math.h>
 #include <unordered_set>
 
-void removerString(Solution &s, int tour, int idxInicial, int cardinalidade){
+void removerString(Solution &s, int tour, int idxInicial, int cardinalidade) {
     CVRPInstance& instance = CVRPInstance::getInstance();
 
-    Veiculo& veiculo = s.Tours[tour];
-    double custoAntigo = veiculo.cost;
+    double custoAntigo = s.Tours[tour].cost;
+
     int fim = idxInicial + cardinalidade;
 
     std::vector<int> novaRoute;
-    novaRoute.reserve(veiculo.route.size());
+    novaRoute.reserve(s.Tours[tour].route.size() - cardinalidade);
 
-    for (int idx = 0; idx < veiculo.route.size(); idx++){
-        int cliente = veiculo.route[idx];
+    for (int idx = 0; idx < s.Tours[tour].route.size(); idx++) {
+        int cliente = s.Tours[tour].route[idx];
 
         if (idx >= idxInicial && idx < fim) {
+
             s.localizacao[cliente] = {-1, -1};
+
             s.ausentes.push_back(cliente);
-            veiculo.usedCapacity -= instance.nodes[cliente].demand;
+
+            s.Tours[tour].usedCapacity -= instance.nodes[cliente].demand;
+
             continue;
         }
 
         novaRoute.push_back(cliente);
     }
 
-    veiculo.route = std::move(novaRoute);
-    recalculateLocalizacaoClientesNoTour(s, tour, 1);
+    s.Tours[tour].route = std::move(novaRoute);
 
-    veiculo.cost = recalculateTourCost(veiculo.route);
-    s.totalCost += veiculo.cost - custoAntigo;
+    // 1. Tour ficou vazio
+    if (s.Tours[tour].route.size() <= 2) {
+        s.totalCost -= custoAntigo;
+
+        // Se não for o último, move o último para cá.
+        if (tour != s.Tours.size() - 1) {
+            s.Tours[tour] = std::move(s.Tours.back());
+
+            s.Tours.pop_back();
+
+            // O último tour mudou de índice
+            recalculateLocalizacaoClientesNoTour(s, tour, 1);
+
+        } else {
+            s.Tours.pop_back();
+        }
+        return;
+    }
+
+    // 2. Tour ainda possui clientes
+    recalculateLocalizacaoClientesNoTour(s, tour, idxInicial);
+
+    s.Tours[tour].cost = recalculateTourCost(s.Tours[tour].route);
+
+    s.totalCost += s.Tours[tour].cost - custoAntigo;
 }
 
 int decidirIdxInicial(const Solution &s, int cliente, int lt){
@@ -127,13 +153,12 @@ void ruin(Solution &s){
             int c_t = c;
             double ltMax = calcularLtMax(s.Tours[t], lsMax);
             int lt = sortearInteiroUniforme(ltMax);
-            removerString(s, t, decidirIdxInicial(s, c_t, lt), lt);
+            int idxInicial = decidirIdxInicial(s, c_t, lt);
+            removerString(s, t, idxInicial, lt);
             R.insert(t);
         }
         i++;
     }
-    
-    recalculateLocalizacao(s);
 }
 
 

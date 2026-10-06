@@ -39,7 +39,8 @@ void adcionarNovoTour(Solution &s, int clienteId){
 
     Veiculo t;
     t.route = {instance.depotId, clienteId, instance.depotId};
-    t.cost = recalculateTourCost(t.route);
+    t.cost = instance.distanceMatrix[instance.depotId][clienteId] 
+            + instance.distanceMatrix[clienteId][instance.depotId];
     t.usedCapacity = instance.nodes[clienteId].demand;
     s.Tours.push_back(t);
 
@@ -65,7 +66,7 @@ void recreate(Solution &s){
 }
 
 void recreateFleet(Solution &s){
-    // if (s.ausentes.empty()) return;
+    if (s.ausentes.empty()) return;
     decidirSort(s.ausentes);
 
     for(int i = s.ausentes.size() - 1; i >= 0; i--){
