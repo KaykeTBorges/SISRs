@@ -15,7 +15,7 @@ struct MelhorPosicao{
     double custo = INFINITY;
 };
 
-double evaluateInsertion(int anterior, int posterior, int atual);
+// double evaluateInsertion(int anterior, int posterior, int atual);
 bool evaluateCapacity(const Veiculo &v, int atual);
 void evaluatePosition(const Solution &s, int clienteId, MelhorPosicao &best);
 bool pulaBlinkRate();

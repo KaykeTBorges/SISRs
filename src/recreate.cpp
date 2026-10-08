@@ -1,12 +1,5 @@
 #include "recreate.h"
 
-double evaluateInsertion(int anterior, int posterior, int atual){
-    CVRPInstance& instance = CVRPInstance::getInstance();
-    
-    return instance.distanceMatrix[anterior][atual] + instance.distanceMatrix[atual][posterior]
-            - instance.distanceMatrix[anterior][posterior];
-}
-
 bool evaluateCapacity(const Veiculo &v, int atual){
     CVRPInstance& instance = CVRPInstance::getInstance();
 
@@ -14,24 +7,35 @@ bool evaluateCapacity(const Veiculo &v, int atual){
 }
 
 bool pulaBlinkRate(){
-    return Random::getReal(0, 1) >= 1 - BLINK_RATE;
+    // Random::getBool(p) retorna true com probabilidade p usando comparação inteira
+    // no output bruto do mt19937_64 — sem uniform_real_distribution, sem float.
+    return Random::getBool(BLINK_RATE);
 }
 
 void evaluatePosition(const Solution &s, int clienteId, MelhorPosicao &best){
+    CVRPInstance& instance = CVRPInstance::getInstance();
+
+    const std::vector<double>& distCliente = instance.distanceMatrix[clienteId];
+
     for (int tourId = 0; tourId < s.Tours.size(); tourId++) {
         const Veiculo& t = s.Tours[tourId];
+
         if (!evaluateCapacity(t, clienteId)) continue;
+
         for (int i = 0; i < t.route.size() - 1; i++) {
             if (pulaBlinkRate()) continue;
-            double delta = evaluateInsertion(t.route[i], t.route[i+1], clienteId);
+
+            double delta = distCliente[t.route[i]] + distCliente[t.route[i+1]]
+                         - instance.distanceMatrix[t.route[i]][t.route[i+1]];
+
             if (delta < best.custo) {
                 best.custo = delta;
-                best.tourId = tourId;  
-                // i + 1 por conta do insert de acontecer naquela posição em especifica e dar um shift 
-                best.idx = i + 1;       
+                best.tourId = tourId;
+                // i + 1 por conta do insert de acontecer naquela posição em especifica e dar um shift
+                best.idx = i + 1;
             }
         }
-    } 
+    }
 }
 
 void adcionarNovoTour(Solution &s, int clienteId){
@@ -63,6 +67,9 @@ void recreate(Solution &s){
         }
     }
     s.ausentes.clear();
+    // reconstrói localizacao uma única vez
+    // inserirClienteTour não a mantém atualizada durante o loop
+    recalculateLocalizacao(s);
 }
 
 void recreateFleet(Solution &s){
@@ -79,6 +86,7 @@ void recreateFleet(Solution &s){
             s.ausentes.pop_back();
         }
     }
+    recalculateLocalizacao(s);
 }
 
 void decidirSort(std::vector<int>& ausentes){

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import csv
 import re
+import secrets
 import subprocess
 import sys
 from decimal import Decimal
@@ -59,6 +60,14 @@ def parse_result(output: str) -> tuple[str, str, str, list[tuple[str, str, str]]
     return cost_match.group(1), vehicles_match.group(1), time_match.group(1), routes
 
 
+def next_seed(used_seeds: set[int]) -> int:
+    while True:
+        seed = secrets.randbelow((1 << 64) - 1) + 1
+        if seed not in used_seeds:
+            used_seeds.add(seed)
+            return seed
+
+
 def main() -> int:
     if not EXECUTABLE.is_file():
         print(f"Executável não encontrado: {EXECUTABLE}\nCompile com: make", file=sys.stderr)
@@ -88,11 +97,12 @@ def main() -> int:
         routes_writer.writerow(("instance", "run", "seed", "tour", "route", "cost"))
         means_writer.writerow(("instance", "runs", "mean_cost", "mean_vehicles", "mean_time"))
 
+        used_seeds: set[int] = set()
         for instance in INSTANCES:
             instance_path = INSTANCE_DIR / f"{instance}.vrp"
 
             for run in range(1, RUNS_PER_INSTANCE + 1):
-                seed = run
+                seed = next_seed(used_seeds)
                 print(f"[{instance}] execução {run}/{RUNS_PER_INSTANCE} - seed {seed}", flush=True)
 
                 completed = subprocess.run(

@@ -3,7 +3,6 @@
 
 #include "data.h"
 #include <vector>
-#include <limits>
 
 struct Veiculo {
     std::vector<int> route;
@@ -37,12 +36,5 @@ void recalculateTotalCost(Solution &s);
 
 void removerClienteTour(Solution &s, int tour, int idx);
 void inserirClienteTour(Solution &s, int tour, int idx, int clienteId);
-
-void localSearch(Solution &s);
-double funcaoLog(double &temp);
-double calcularC(int f);
-int sumAbs(const Solution& s, const std::vector<int>& absenceCounter);
-int encontrarTourMenorSumAbs(const Solution& s, const std::vector<int>& absenceCounter);
-void removerTour(Solution &s, int tour);
 
 #endif // SOLUTION_H

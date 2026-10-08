@@ -10,33 +10,35 @@ void removerString(Solution &s, int tour, int idxInicial, int cardinalidade) {
 
     int fim = idxInicial + cardinalidade;
 
-    std::vector<int> novaRoute;
-    novaRoute.reserve(s.Tours[tour].route.size() - cardinalidade);
+    // nós antes e depois da string, capturados antes do erase
+    int anterior = s.Tours[tour].route[idxInicial - 1];
+    int posterior = s.Tours[tour].route[fim];
 
-    for (int idx = 0; idx < s.Tours[tour].route.size(); idx++) {
+    // arcos da fronteira, primeiro removido e ultimo removido
+    double custoArcoRemovidos = instance.distanceMatrix[anterior][s.Tours[tour].route[idxInicial]]
+                               + instance.distanceMatrix[s.Tours[tour].route[fim - 1]][posterior];
+
+    // processa e acumula arcos internos da string
+    for (int idx = idxInicial; idx < fim; idx++) {
         int cliente = s.Tours[tour].route[idx];
 
-        if (idx >= idxInicial && idx < fim) {
-
-            s.localizacao[cliente] = {-1, -1};
-
-            s.ausentes.push_back(cliente);
-
-            s.Tours[tour].usedCapacity -= instance.nodes[cliente].demand;
-
-            continue;
+        // arco entre dois nós consecutivos dentro da string removida
+        if (idx < fim - 1) {
+            custoArcoRemovidos += instance.distanceMatrix[cliente][s.Tours[tour].route[idx + 1]];
         }
 
-        novaRoute.push_back(cliente);
+        s.localizacao[cliente] = {-1, -1};
+        s.ausentes.push_back(cliente);
+        s.Tours[tour].usedCapacity -= instance.nodes[cliente].demand;
     }
 
-    s.Tours[tour].route = std::move(novaRoute);
+    s.Tours[tour].route.erase(s.Tours[tour].route.begin() + idxInicial, s.Tours[tour].route.begin() + fim);
 
     // 1. Tour ficou vazio
     if (s.Tours[tour].route.size() <= 2) {
         s.totalCost -= custoAntigo;
 
-        // Se não for o último, move o último para cá.
+        // Se não for o último, move o último para cá
         if (tour != s.Tours.size() - 1) {
             s.Tours[tour] = std::move(s.Tours.back());
 
@@ -44,7 +46,6 @@ void removerString(Solution &s, int tour, int idxInicial, int cardinalidade) {
 
             // O último tour mudou de índice
             recalculateLocalizacaoClientesNoTour(s, tour, 1);
-
         } else {
             s.Tours.pop_back();
         }
@@ -54,7 +55,8 @@ void removerString(Solution &s, int tour, int idxInicial, int cardinalidade) {
     // 2. Tour ainda possui clientes
     recalculateLocalizacaoClientesNoTour(s, tour, idxInicial);
 
-    s.Tours[tour].cost = recalculateTourCost(s.Tours[tour].route);
+    s.Tours[tour].cost = custoAntigo - custoArcoRemovidos
+                       + instance.distanceMatrix[anterior][posterior];
 
     s.totalCost += s.Tours[tour].cost - custoAntigo;
 }

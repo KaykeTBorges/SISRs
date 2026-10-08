@@ -65,7 +65,7 @@ make
 python3 benchmark/benchmark.py
 ```
 
-O script executa, em sequência, as nove instâncias configuradas, dez vezes cada. Para cada instância, usa as seeds de 1 a 10. Ao terminar, registra os dados em três arquivos:
+O script executa, em sequência, as nove instâncias configuradas, dez vezes cada. Cada execução recebe uma seed aleatória de 64 bits, sem repetição dentro da bateria; a seed usada fica registrada nos CSVs para permitir reproduzir uma execução. Ao terminar, registra os dados em três arquivos:
 
 ```text
 benchmark/resultados.csv

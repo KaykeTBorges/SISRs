@@ -173,11 +173,12 @@ CVRPInstance& loadInstance(const std::string& filepath){
 }
 
 std::vector<std::vector<int>> buildAdjacencyLists(const CVRPInstance& instance){
-    std::vector<std::vector<int>> adjacencyList(instance.dimension + 1, std::vector<int>(instance.dimension - 1));
+    // dimension - 2 exclui o próprio cliente e o depósito
+    std::vector<std::vector<int>> adjacencyList(instance.dimension + 1, std::vector<int>(instance.dimension - 2));
 
     for(int i = 1; i <= instance.dimension; i++){
         if (i == instance.depotId) continue;
-        int pos = 1;
+        int pos = 0;
         for(int j = 1; j <= instance.dimension; j++){
             if (j == instance.depotId || j == i) continue;
             adjacencyList[i][pos] = j;
