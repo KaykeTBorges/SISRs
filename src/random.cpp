@@ -29,12 +29,17 @@ double Random::getReal(double min, double max)
 
 bool Random::getBool(double p)
 {
-    // Converte o threshold p para o espaço inteiro do mt19937_64 ([0, 2^64)).
-    // Comparar o output bruto com esse threshold é equivalente a getReal(0,1) < p
-    // mas sem construir uniform_real_distribution, sem multiplicação float, sem shift.
+    // O gerador mt19937_64 gera números inteiros de 0 até o seu limite máximo (2^64 - 1)
+    // Esse limite é 18.4 quintilhões
+    static constexpr uint64_t limiteMaximo = std::mt19937_64::max();
     
-    // Precisão: uniform_real_distribution<double> tem 2^53 valores distintos em [0,1);
-    // esta abordagem tem 2^64 — mais granular, sem impacto prático para p=0.01.
-    const uint64_t threshold = static_cast<uint64_t>(p * static_cast<double>(std::numeric_limits<uint64_t>::max()));
-    return gen()() < threshold;
+    // inves de converter o número sorteado gigante em um double entre 0 e 1 o que exigiria processamento de ponto flutuante
+    //  é feito então a lógica inversa transforma a probabilidade (p) -> ex: 0.01 em um número inteiro gigante baseado no gerador de numeros
+    // assim se p=0.01 o valor limitante vira exatamente 1% de 18.4 quintilhões
+    uint64_t valorLimitante = static_cast<uint64_t>(p * static_cast<double>(limiteMaximo));
+    
+    // a CPU é seria mais eficiente comparando dois números inteiros
+    // como o número sorteado cai em qualquer lugar entre 0 e o limite maximo com a mesma chance
+    // ele tem exatamente (p) de probabilidade de ser menor que valor limitante
+    return gen()() < valorLimitante;
 }

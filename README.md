@@ -14,6 +14,7 @@ Execute os comandos a partir da pasta raiz do projeto, onde está este README.
 - `include/`: headers C++ (`.h`)
 - `instances/`: instâncias `.vrp` e soluções de referência `.sol`
 - `benchmark/`: script de automação e CSVs de resultados
+- `PROFILING.md`: guia de como usar ferramentas de performance (perf) no projeto
 
 O `Makefile` compila o executável `leitor` na raiz do projeto.
 

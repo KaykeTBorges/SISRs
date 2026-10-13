@@ -8,6 +8,7 @@ constexpr int ITERATIONS = 30000000;
 constexpr int ITERATIONS_FLEET = ITERATIONS * 0.1;
 constexpr double TEMP_INICIAL = 100.0;
 constexpr double TEMP_FINAL = 1.0;
+constexpr double ALPHA = 0.01;
 
 struct Node {
     int id;

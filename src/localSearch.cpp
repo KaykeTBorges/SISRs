@@ -125,10 +125,10 @@ void localSearch(Solution &s) {
         ruin(sEstrela);
         recreate(sEstrela);
 
-        if (sEstrela.totalCost < s.totalCost - funcaoLog(temp)) {
+        if (sEstrela.Tours.size() <= s.Tours.size() && sEstrela.totalCost < s.totalCost - funcaoLog(temp)) {
             s = sEstrela;
         }
-        if (sEstrela.totalCost < sBest.totalCost) {
+        if (sEstrela.Tours.size() <= s.Tours.size() && sEstrela.totalCost < sBest.totalCost) {
             sBest = sEstrela;
         }
         temp = temp * c;

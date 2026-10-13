@@ -7,8 +7,7 @@ bool evaluateCapacity(const Veiculo &v, int atual){
 }
 
 bool pulaBlinkRate(){
-    // Random::getBool(p) retorna true com probabilidade p usando comparação inteira
-    // no output bruto do mt19937_64 — sem uniform_real_distribution, sem float.
+    // Random::getReal(0, 1) >= BLINK_RATE
     return Random::getBool(BLINK_RATE);
 }
 

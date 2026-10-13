@@ -10,19 +10,20 @@ void removerString(Solution &s, int tour, int idxInicial, int cardinalidade) {
 
     int fim = idxInicial + cardinalidade;
 
-    // nós antes e depois da string, capturados antes do erase
+    // nós antes e depois da string antes do erase
     int anterior = s.Tours[tour].route[idxInicial - 1];
     int posterior = s.Tours[tour].route[fim];
 
-    // arcos da fronteira, primeiro removido e ultimo removido
+    // arcos do primeiro e ultimo
+    // aqui já tira o custo dos nos a remover
     double custoArcoRemovidos = instance.distanceMatrix[anterior][s.Tours[tour].route[idxInicial]]
                                + instance.distanceMatrix[s.Tours[tour].route[fim - 1]][posterior];
 
-    // processa e acumula arcos internos da string
+    // processa e acumula os arcos do valor a ser removido
     for (int idx = idxInicial; idx < fim; idx++) {
         int cliente = s.Tours[tour].route[idx];
 
-        // arco entre dois nós consecutivos dentro da string removida
+        // garantindo que o indice está dentro da cardinalidade definido
         if (idx < fim - 1) {
             custoArcoRemovidos += instance.distanceMatrix[cliente][s.Tours[tour].route[idx + 1]];
         }
@@ -34,11 +35,11 @@ void removerString(Solution &s, int tour, int idxInicial, int cardinalidade) {
 
     s.Tours[tour].route.erase(s.Tours[tour].route.begin() + idxInicial, s.Tours[tour].route.begin() + fim);
 
-    // 1. Tour ficou vazio
+    // 1 - Tour ficou vazio, logo é preciso apagar
     if (s.Tours[tour].route.size() <= 2) {
         s.totalCost -= custoAntigo;
 
-        // Se não for o último, move o último para cá
+        // Se não for o último move o último para cá, pra não precisar dar erase
         if (tour != s.Tours.size() - 1) {
             s.Tours[tour] = std::move(s.Tours.back());
 
@@ -47,16 +48,78 @@ void removerString(Solution &s, int tour, int idxInicial, int cardinalidade) {
             // O último tour mudou de índice
             recalculateLocalizacaoClientesNoTour(s, tour, 1);
         } else {
+            // se for o ultimo, ai já dá pop back de gratis
             s.Tours.pop_back();
         }
         return;
     }
 
-    // 2. Tour ainda possui clientes
+    // 2 - Tour ainda possui clientes
     recalculateLocalizacaoClientesNoTour(s, tour, idxInicial);
 
     s.Tours[tour].cost = custoAntigo - custoArcoRemovidos
                        + instance.distanceMatrix[anterior][posterior];
+
+    s.totalCost += s.Tours[tour].cost - custoAntigo;
+}
+
+void removerSplitString(Solution &s, int tour, int idxInicial, int cardinalidade, int m) {
+    CVRPInstance& instance = CVRPInstance::getInstance();
+
+    double custoAntigo = s.Tours[tour].cost;
+
+    int fim = idxInicial + cardinalidade;
+
+    // nós antes e depois da string antes do erase
+    int anterior = s.Tours[tour].route[idxInicial - 1];
+    int posterior = s.Tours[tour].route[fim];
+
+    int mDentro = Random::getInt(idxInicial+1, fim-1-m);
+
+    int primeiroPreservado = s.Tours[tour].route[mDentro];
+    int ultimoPreservado = s.Tours[tour].route[mDentro + m - 1];
+
+    // arcos do primeiro e ultimo
+    // aqui já tira o custo dos nos a remover
+    double custoArcoRemovidos = instance.distanceMatrix[anterior][s.Tours[tour].route[idxInicial]];
+
+    double custoNovoM = instance.distanceMatrix[anterior][primeiroPreservado];
+
+    // processa e acumula os arcos do valor a ser removido
+    for (int idx = idxInicial; idx < fim; idx++) {
+        int cliente = s.Tours[tour].route[idx];
+
+        // garantindo que o indice está dentro da cardinalidade definido
+        if (idx < fim - 1) {
+            custoArcoRemovidos += instance.distanceMatrix[cliente][s.Tours[tour].route[idx + 1]];
+        } else {
+            custoArcoRemovidos +=
+                instance.distanceMatrix[cliente][posterior];
+        }
+
+        // mantém os arcos internos da sequência preservada
+        if (idx >= mDentro && idx < mDentro + m) {
+            if (idx < mDentro + m - 1) {
+                custoNovoM +=
+                    instance.distanceMatrix[cliente][s.Tours[tour].route[idx + 1]];
+            }
+            continue;
+        }
+        
+
+        s.localizacao[cliente] = {-1, -1};
+        s.ausentes.push_back(cliente);
+        s.Tours[tour].usedCapacity -= instance.nodes[cliente].demand;
+    }
+
+    custoNovoM += instance.distanceMatrix[ultimoPreservado][posterior];
+
+    s.Tours[tour].route.erase(s.Tours[tour].route.begin() + mDentro + m, s.Tours[tour].route.begin() + fim);
+    s.Tours[tour].route.erase(s.Tours[tour].route.begin() + idxInicial, s.Tours[tour].route.begin() + mDentro);
+
+    recalculateLocalizacaoClientesNoTour(s, tour, idxInicial);
+
+    s.Tours[tour].cost = custoAntigo - custoArcoRemovidos + custoNovoM;
 
     s.totalCost += s.Tours[tour].cost - custoAntigo;
 }
@@ -79,7 +142,7 @@ int decidirIdxInicial(const Solution &s, int cliente, int lt){
     // porque eu subtraio o espaço da direita porque descubro quanto que sobre de cardinalidade para ser preenchida
     // com o outro lado
 
-    // aqui defini o escopo do começo do random, se der 0 
+    // aqui define o escopo do começo do random, se der 0 
     // quer dizer que meu espaço da direita é maior que a cardinalidade
     // ou voce não precisa retirar nada para caber, ou precisa retirar com base no espaço da direita, para caber
     int clienteAntesMin = std::max(0, lt - 1 - espacoDireita);
@@ -124,6 +187,18 @@ int sortearInteiroUniforme(double max){
     return static_cast<int>(floor(Random::getReal(1, max + 1)));
 }
 
+int calcularM(int mMax){
+    if(mMax < 1) return 0;
+    int m = 1;
+    while(m < mMax){
+        if(Random::getBool(ALPHA)) return m;
+        else{
+            m += 1;
+        }
+    }
+    return m;
+}
+
 void ruin(Solution &s){
     CVRPInstance& instance = CVRPInstance::getInstance();
 
@@ -133,7 +208,7 @@ void ruin(Solution &s){
 
     // c seed
     // intervalo fechado dos dois lados (inclusos)
-    // retirando o 0 que é o deposito e -1 porque o dimension é conseguido como o size
+    // retirando o 1 que é o deposito
     // ai ele é uma contagem, logo não uma indexação
     int cSeed = Random::getInt(2, instance.dimension);
     
@@ -154,14 +229,30 @@ void ruin(Solution &s){
         if(t != -1 && !R.count(t)){
             int c_t = c;
             double ltMax = calcularLtMax(s.Tours[t], lsMax);
-            int lt = sortearInteiroUniforme(ltMax);
-            int idxInicial = decidirIdxInicial(s, c_t, lt);
-            removerString(s, t, idxInicial, lt);
-            R.insert(t);
+            
+            if(Random::getInt(0, 1)){
+                int lt = sortearInteiroUniforme(ltMax);
+                int idxInicial = decidirIdxInicial(s, c_t, lt);
+                removerString(s, t, idxInicial, lt);
+                R.insert(t);
+            }else{
+                int l = sortearInteiroUniforme(ltMax);
+                int mMax = cardinalidadeTour(s.Tours[t]) - l;
+
+                if (l < 2 || mMax < 1) {
+                    // Remoção normal
+                    int idxInicial = decidirIdxInicial(s, c_t, l);
+                    removerString(s, t, idxInicial, l);
+                } else {
+                    // Split string
+                    int m = calcularM(mMax);
+                    int lt = l + m;
+
+                    int idxInicial = decidirIdxInicial(s, c_t, lt);
+                    removerSplitString(s, t, idxInicial, lt, m);
+                }
+            }
         }
         i++;
     }
 }
-
-
-
