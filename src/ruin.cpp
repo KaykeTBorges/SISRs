@@ -20,7 +20,8 @@ void removerString(Solution &s, int tour, int idxInicial, int cardinalidade) {
     for (int idx = idxInicial; idx < fim; idx++) {
         int cliente = s.Tours[tour].route[idx];
 
-        // garantindo que o indice está dentro da cardinalidade definido
+        // começa em 1 antes porque ai já calculo aqui o inicial, quebrando os removidos
+        // não calculando ele fora, só calculando fora o fim, porque precisa, já que para antes do fim
         custoArcoRemovidos += instance.distanceMatrix[s.Tours[tour].route[idx - 1]][cliente];
 
         s.localizacao[cliente] = {-1, -1};
@@ -32,6 +33,8 @@ void removerString(Solution &s, int tour, int idxInicial, int cardinalidade) {
     s.Tours[tour].route.erase(s.Tours[tour].route.begin() + idxInicial, s.Tours[tour].route.begin() + fim);
 
     // 1 - tour ficou vazio, logo é preciso apagar
+    // uso ele como menor igual a dois porque se ocorrer algum bug ele aceita mesmo assim
+    // mas a ideia é que fosse um conferimento de se é igual a 2 apenas
     if (s.Tours[tour].route.size() <= 2) {
         s.totalCost -= custoAntigo;
 
@@ -102,6 +105,8 @@ void removerSplitString(Solution &s, int tour, int idxInicial, int cardinalidade
     }
     custoArcoRemovidos += instance.distanceMatrix[s.Tours[tour].route[fim - 1]][posterior];
 
+    // tira o final depois o primeiro, que ai da validade aos indices do primeiro
+    // porque se tirado os primeiros, o indice dos ultimos mudam e perdemos a referencia
     s.Tours[tour].route.erase(s.Tours[tour].route.begin() + mDentro + m, s.Tours[tour].route.begin() + fim);
     s.Tours[tour].route.erase(s.Tours[tour].route.begin() + idxInicial, s.Tours[tour].route.begin() + mDentro);
 
@@ -202,7 +207,7 @@ void ruin(Solution &s){
     
     // R 
     std::unordered_set<int> R;
-
+    R.reserve(s.Tours.size());
 
     size_t i = 0;
     // enquanto ainda tiver clientes perto dele, continua procurando
