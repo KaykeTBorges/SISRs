@@ -14,38 +14,34 @@ void removerString(Solution &s, int tour, int idxInicial, int cardinalidade) {
     int anterior = s.Tours[tour].route[idxInicial - 1];
     int posterior = s.Tours[tour].route[fim];
 
-    // arcos do primeiro e ultimo
-    // aqui já tira o custo dos nos a remover
-    double custoArcoRemovidos = instance.distanceMatrix[anterior][s.Tours[tour].route[idxInicial]]
-                               + instance.distanceMatrix[s.Tours[tour].route[fim - 1]][posterior];
+    double custoArcoRemovidos = 0.0;
 
     // processa e acumula os arcos do valor a ser removido
     for (int idx = idxInicial; idx < fim; idx++) {
         int cliente = s.Tours[tour].route[idx];
 
         // garantindo que o indice está dentro da cardinalidade definido
-        if (idx < fim - 1) {
-            custoArcoRemovidos += instance.distanceMatrix[cliente][s.Tours[tour].route[idx + 1]];
-        }
+        custoArcoRemovidos += instance.distanceMatrix[s.Tours[tour].route[idx - 1]][cliente];
 
         s.localizacao[cliente] = {-1, -1};
         s.ausentes.push_back(cliente);
         s.Tours[tour].usedCapacity -= instance.nodes[cliente].demand;
     }
+    custoArcoRemovidos += instance.distanceMatrix[s.Tours[tour].route[fim - 1]][posterior];
 
     s.Tours[tour].route.erase(s.Tours[tour].route.begin() + idxInicial, s.Tours[tour].route.begin() + fim);
 
-    // 1 - Tour ficou vazio, logo é preciso apagar
+    // 1 - tour ficou vazio, logo é preciso apagar
     if (s.Tours[tour].route.size() <= 2) {
         s.totalCost -= custoAntigo;
 
-        // Se não for o último move o último para cá, pra não precisar dar erase
+        // se não for o último move o último para cá, pra não precisar dar erase
         if (tour != s.Tours.size() - 1) {
             s.Tours[tour] = std::move(s.Tours.back());
 
             s.Tours.pop_back();
 
-            // O último tour mudou de índice
+            // o último tour mudou de índice
             recalculateLocalizacaoClientesNoTour(s, tour, 1);
         } else {
             // se for o ultimo, ai já dá pop back de gratis
@@ -54,7 +50,7 @@ void removerString(Solution &s, int tour, int idxInicial, int cardinalidade) {
         return;
     }
 
-    // 2 - Tour ainda possui clientes
+    // 2 - tour ainda possui clientes
     recalculateLocalizacaoClientesNoTour(s, tour, idxInicial);
 
     s.Tours[tour].cost = custoAntigo - custoArcoRemovidos
@@ -79,40 +75,32 @@ void removerSplitString(Solution &s, int tour, int idxInicial, int cardinalidade
     int primeiroPreservado = s.Tours[tour].route[mDentro];
     int ultimoPreservado = s.Tours[tour].route[mDentro + m - 1];
 
-    // arcos do primeiro e ultimo
-    // aqui já tira o custo dos nos a remover
-    double custoArcoRemovidos = instance.distanceMatrix[anterior][s.Tours[tour].route[idxInicial]];
+    double custoArcoRemovidos = 0.0;
 
     double custoNovoM = instance.distanceMatrix[anterior][primeiroPreservado];
+    custoNovoM += instance.distanceMatrix[ultimoPreservado][posterior];
 
     // processa e acumula os arcos do valor a ser removido
-    for (int idx = idxInicial; idx < fim; idx++) {
+    int idx;
+    for(idx = idxInicial; idx < mDentro; idx++){
         int cliente = s.Tours[tour].route[idx];
 
-        // garantindo que o indice está dentro da cardinalidade definido
-        if (idx < fim - 1) {
-            custoArcoRemovidos += instance.distanceMatrix[cliente][s.Tours[tour].route[idx + 1]];
-        } else {
-            custoArcoRemovidos +=
-                instance.distanceMatrix[cliente][posterior];
-        }
-
-        // mantém os arcos internos da sequência preservada
-        if (idx >= mDentro && idx < mDentro + m) {
-            if (idx < mDentro + m - 1) {
-                custoNovoM +=
-                    instance.distanceMatrix[cliente][s.Tours[tour].route[idx + 1]];
-            }
-            continue;
-        }
-        
-
+        custoArcoRemovidos += instance.distanceMatrix[s.Tours[tour].route[idx - 1]][cliente];
         s.localizacao[cliente] = {-1, -1};
         s.ausentes.push_back(cliente);
         s.Tours[tour].usedCapacity -= instance.nodes[cliente].demand;
     }
+    custoArcoRemovidos += instance.distanceMatrix[s.Tours[tour].route[mDentro - 1]][primeiroPreservado];
 
-    custoNovoM += instance.distanceMatrix[ultimoPreservado][posterior];
+    for(idx = mDentro + m; idx < fim; idx++){
+        int cliente = s.Tours[tour].route[idx];
+
+        custoArcoRemovidos += instance.distanceMatrix[s.Tours[tour].route[idx - 1]][cliente];
+        s.localizacao[cliente] = {-1, -1};
+        s.ausentes.push_back(cliente);
+        s.Tours[tour].usedCapacity -= instance.nodes[cliente].demand;
+    }
+    custoArcoRemovidos += instance.distanceMatrix[s.Tours[tour].route[fim - 1]][posterior];
 
     s.Tours[tour].route.erase(s.Tours[tour].route.begin() + mDentro + m, s.Tours[tour].route.begin() + fim);
     s.Tours[tour].route.erase(s.Tours[tour].route.begin() + idxInicial, s.Tours[tour].route.begin() + mDentro);
@@ -234,7 +222,6 @@ void ruin(Solution &s){
                 int lt = sortearInteiroUniforme(ltMax);
                 int idxInicial = decidirIdxInicial(s, c_t, lt);
                 removerString(s, t, idxInicial, lt);
-                R.insert(t);
             }else{
                 int l = sortearInteiroUniforme(ltMax);
                 int mMax = cardinalidadeTour(s.Tours[t]) - l;
@@ -252,6 +239,7 @@ void ruin(Solution &s){
                     removerSplitString(s, t, idxInicial, lt, m);
                 }
             }
+            R.insert(t);
         }
         i++;
     }
