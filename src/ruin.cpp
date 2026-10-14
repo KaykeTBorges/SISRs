@@ -207,7 +207,7 @@ void ruin(Solution &s){
     
     // R 
     std::unordered_set<int> R;
-    R.reserve(s.Tours.size());
+    R.reserve(ks+1);
 
     size_t i = 0;
     // enquanto ainda tiver clientes perto dele, continua procurando
