@@ -223,6 +223,7 @@ void ruin(Solution &s){
             int c_t = c;
             double ltMax = calcularLtMax(s.Tours[t], lsMax);
             
+            // 50% de chance ser um ou outro
             if(Random::getInt(0, 1)){
                 int lt = sortearInteiroUniforme(ltMax);
                 int idxInicial = decidirIdxInicial(s, c_t, lt);
@@ -231,6 +232,12 @@ void ruin(Solution &s){
                 int l = sortearInteiroUniforme(ltMax);
                 int mMax = cardinalidadeTour(s.Tours[t]) - l;
 
+                // se o split ganhar é checado se é possivel fazer atraves do split
+                // precisa ter pelo menos o tamanho maior de 2 de cardinalidade
+                // se o mMax der menor que 1 não tem tamanho da substring, logo invalido
+                // pode ocorrer dele sendo igual a zero, que é tirar todo um tour
+                
+                // até uma melhoria possivel é identificar esses casos e tratar eles separadamente
                 if (l < 2 || mMax < 1) {
                     // Remoção normal
                     int idxInicial = decidirIdxInicial(s, c_t, l);
